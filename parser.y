@@ -574,6 +574,7 @@ import (
 	tableChecksum         "TABLE_CHECKSUM"
 	tables                "TABLES"
 	tablespace            "TABLESPACE"
+	tblProperties         "TBLPROPERTIES"
 	temporary             "TEMPORARY"
 	temptable             "TEMPTABLE"
 	textType              "TEXT"
@@ -1108,6 +1109,11 @@ import (
 	TableNameListOpt                       "Table name list opt"
 	TableOption                            "create table option"
 	TableOptionList                        "create table option list"
+	TablePropertyValue                     "Table property value"
+	TablePropertyValueList                 "Table property value list"
+	TableProperty                          "Table property"
+	TablePropertyList                      "Table property list"
+	TablePropertyListOpt                   "Table property list opt"
 	TableRef                               "table reference"
 	TableRefs                              "table references"
 	TableSampleOpt                         "table sample clause optional"
@@ -5528,6 +5534,7 @@ UnReservedKeyword:
 |	"OPTIONAL"
 |	"REQUIRED"
 |	"PURGE"
+|	"TBLPROPERTIES"
 
 TiDBKeyword:
 	"ADMIN"
@@ -7264,6 +7271,40 @@ TableNameList:
 |	TableNameList ',' TableName
 	{
 		$$ = append($1.([]*ast.TableName), $3.(*ast.TableName))
+	}
+
+TablePropertyValue:
+	stringLit
+	{
+		$$ = &ast.TablePropertyValue{Value: model.NewCIStr($1)}
+	}
+
+TablePropertyValueList:
+	TablePropertyValue
+	{
+		tbl := []*ast.TablePropertyValue{$1.(*ast.TablePropertyValue)}
+		$$ = tbl
+	}
+|	TablePropertyValueList '|' TablePropertyValue
+	{
+		$$ = append($1.([]*ast.TablePropertyValue), $3.(*ast.TablePropertyValue))
+	}
+
+TableProperty:
+	stringLit EqOpt TablePropertyValueList
+	{
+		$$ = &ast.TableProperty{Key: model.NewCIStr($1), Values: $3.([]*ast.TablePropertyValue)}
+	}
+
+TablePropertyList:
+	TableProperty
+	{
+		tbl := []*ast.TableProperty{$1.(*ast.TableProperty)}
+		$$ = tbl
+	}
+|	TablePropertyList ',' TableProperty
+	{
+		$$ = append($1.([]*ast.TableProperty), $3.(*ast.TableProperty))
 	}
 
 TableNameOptWild:
@@ -9933,6 +9974,13 @@ TableNameListOpt:
 	}
 |	TableNameList
 
+TablePropertyListOpt:
+	%prec empty
+	{
+		$$ = []*ast.TableProperty{}
+	}
+|	TablePropertyList
+
 WithReadLockOpt:
 	{
 		$$ = false
@@ -10279,6 +10327,13 @@ TableOption:
 	{
 		// Parse it but will ignore it
 		$$ = &ast.TableOption{Tp: ast.TableOptionEncryption, StrValue: $3}
+	}
+|	"TBLPROPERTIES" '(' TablePropertyListOpt ')'
+	{
+		$$ = &ast.TableOption{
+			Tp:              ast.TableOptionProperties,
+			TableProperties: $3.([]*ast.TableProperty),
+		}
 	}
 
 StatsPersistentVal:

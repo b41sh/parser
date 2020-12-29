@@ -1773,6 +1773,7 @@ const (
 	TableOptionTableCheckSum
 	TableOptionUnion
 	TableOptionEncryption
+	TableOptionProperties
 )
 
 // RowFormat types
@@ -1810,13 +1811,72 @@ const (
 	TableOptionCharsetWithConvertTo    uint64 = 1
 )
 
+type TablePropertyValue struct {
+	node
+	Value model.CIStr
+}
+
+func (n *TablePropertyValue) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*TablePropertyValue)
+	return v.Leave(n)
+}
+
+func (n *TablePropertyValue) Restore(ctx *format.RestoreCtx) error {
+	ctx.WritePlain(n.Value.O)
+	return nil
+}
+
+// TableProperty represents table definition with your own metadata key/value pairs.
+// https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL
+// TBLPROPERTIES ("hbase.table.name"="table_name") – see HBase Integration.
+type TableProperty struct {
+	node
+	Key    model.CIStr
+	Values []*TablePropertyValue
+}
+
+func (n *TableProperty) Accept(v Visitor) (Node, bool) {
+	newNode, skipChildren := v.Enter(n)
+	if skipChildren {
+		return v.Leave(newNode)
+	}
+	n = newNode.(*TableProperty)
+	if n != nil {
+		for i, t := range n.Values {
+			node, ok := t.Accept(v)
+			if !ok {
+				return n, false
+			}
+			n.Values[i] = node.(*TablePropertyValue)
+		}
+	}
+	return v.Leave(n)
+}
+
+func (n *TableProperty) Restore(ctx *format.RestoreCtx) error {
+	ctx.WritePlain(n.Key.O)
+	ctx.WritePlain("=")
+	for i, tablePropertyValue := range n.Values {
+		tablePropertyValue.Restore(ctx)
+		if i < len(n.Values)-1 {
+			ctx.WritePlain("|")
+		}
+	}
+	return nil
+}
+
 // TableOption is used for parsing table option from SQL.
 type TableOption struct {
-	Tp         TableOptionType
-	Default    bool
-	StrValue   string
-	UintValue  uint64
-	TableNames []*TableName
+	Tp              TableOptionType
+	Default         bool
+	StrValue        string
+	UintValue       uint64
+	TableProperties []*TableProperty
+	TableNames      []*TableName
 }
 
 func (n *TableOption) Restore(ctx *format.RestoreCtx) error {
@@ -2017,6 +2077,16 @@ func (n *TableOption) Restore(ctx *format.RestoreCtx) error {
 		ctx.WriteKeyWord("ENCRYPTION ")
 		ctx.WritePlain("= ")
 		ctx.WriteString(n.StrValue)
+	case TableOptionProperties:
+		ctx.WriteKeyWord("TBLPROPERTIES ")
+		ctx.WritePlain("(")
+		for i, tableProperty := range n.TableProperties {
+			tableProperty.Restore(ctx)
+			if i < len(n.TableProperties)-1 {
+				ctx.WritePlain(",")
+			}
+		}
+		ctx.WritePlain(")")
 	default:
 		return errors.Errorf("invalid TableOption: %d", n.Tp)
 	}
