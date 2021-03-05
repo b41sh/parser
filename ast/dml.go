@@ -2279,6 +2279,7 @@ const (
 	ShowBackups
 	ShowRestores
 	ShowImports
+	ShowTask
 )
 
 const (
@@ -2586,6 +2587,8 @@ func (n *ShowStmt) Restore(ctx *format.RestoreCtx) error {
 			ctx.WriteKeyWord("RESTORES")
 		case ShowImports:
 			ctx.WriteKeyWord("IMPORTS")
+		case ShowTask:
+			ctx.WriteKeyWord("TASK")
 		default:
 			return errors.New("Unknown ShowStmt type")
 		}

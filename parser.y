@@ -574,6 +574,7 @@ import (
 	tableChecksum         "TABLE_CHECKSUM"
 	tables                "TABLES"
 	tablespace            "TABLESPACE"
+	task                  "TASK"
 	tblProperties         "TBLPROPERTIES"
 	temporary             "TEMPORARY"
 	temptable             "TEMPTABLE"
@@ -862,7 +863,7 @@ import (
 	ChangeStmt             "Change statement"
 	SetRoleStmt            "Set active role statement"
 	SetDefaultRoleStmt     "Set default statement for some user"
-	ShowStmt               "Show engines/databases/tables/user/columns/warnings/status statement"
+	ShowStmt               "Show engines/databases/tables/user/columns/warnings/status/task statement"
 	Statement              "statement"
 	TraceStmt              "TRACE statement"
 	TraceableStmt          "traceable statement"
@@ -5303,6 +5304,7 @@ UnReservedKeyword:
 |	"SUBPARTITION"
 |	"TABLES"
 |	"TABLESPACE"
+|	"TASK"
 |	"TEXT"
 |	"THAN"
 |	"TIME" %prec lowerThanStringLitToken
@@ -9701,6 +9703,10 @@ ShowTargetFilterable:
 |	"ERRORS"
 	{
 		$$ = &ast.ShowStmt{Tp: ast.ShowErrors}
+	}
+|	"TASK"
+	{
+		$$ = &ast.ShowStmt{Tp: ast.ShowTask}
 	}
 |	GlobalScope "VARIABLES"
 	{
