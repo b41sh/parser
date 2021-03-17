@@ -516,6 +516,14 @@ func (ts *testDDLSuite) TestAlterTableSpecRestore(c *C) {
 		{"coalesce partition 3", "COALESCE PARTITION 3"},
 		{"drop partition p1", "DROP PARTITION `p1`"},
 		{"TRUNCATE PARTITION p0", "TRUNCATE PARTITION `p0`"},
+		{"add stats_extended s1 cardinality(a,b)", "ADD STATS_EXTENDED `s1` CARDINALITY(`a`, `b`)"},
+		{"add stats_extended if not exists s1 cardinality(a,b)", "ADD STATS_EXTENDED IF NOT EXISTS `s1` CARDINALITY(`a`, `b`)"},
+		{"add stats_extended s1 correlation(a,b)", "ADD STATS_EXTENDED `s1` CORRELATION(`a`, `b`)"},
+		{"add stats_extended if not exists s1 correlation(a,b)", "ADD STATS_EXTENDED IF NOT EXISTS `s1` CORRELATION(`a`, `b`)"},
+		{"add stats_extended s1 dependency(a,b)", "ADD STATS_EXTENDED `s1` DEPENDENCY(`a`, `b`)"},
+		{"add stats_extended if not exists s1 dependency(a,b)", "ADD STATS_EXTENDED IF NOT EXISTS `s1` DEPENDENCY(`a`, `b`)"},
+		{"drop stats_extended s1", "DROP STATS_EXTENDED `s1`"},
+		{"drop stats_extended if exists s1", "DROP STATS_EXTENDED IF EXISTS `s1`"},
 	}
 	extractNodeFunc := func(node Node) Node {
 		return node.(*AlterTableStmt).Specs[0]

@@ -269,6 +269,10 @@ const (
 	/*
 	 *  Please add the new priv before AllPriv to keep the values consistent across versions.
 	 */
+
+	// ExtendedPriv is used to successful parse privileges not included above.
+	// these are dynamic privileges in MySQL 8.0 and other extended privileges like LOAD FROM S3 in Aurora.
+	ExtendedPriv
 )
 
 // AllPrivMask is the mask for PrivilegeType with all bits set to 1.
@@ -498,7 +502,7 @@ var AllGlobalPrivs = []PrivilegeType{SelectPriv, InsertPriv, UpdatePriv, DeleteP
 var AllDBPrivs = []PrivilegeType{SelectPriv, InsertPriv, UpdatePriv, DeletePriv, CreatePriv, DropPriv, AlterPriv, ExecutePriv, IndexPriv, CreateViewPriv, ShowViewPriv}
 
 // AllTablePrivs is all the privileges in table scope.
-var AllTablePrivs = []PrivilegeType{SelectPriv, InsertPriv, UpdatePriv, DeletePriv, CreatePriv, DropPriv, AlterPriv, IndexPriv}
+var AllTablePrivs = []PrivilegeType{SelectPriv, InsertPriv, UpdatePriv, DeletePriv, CreatePriv, DropPriv, AlterPriv, IndexPriv, ShowViewPriv}
 
 // AllColumnPrivs is all the privileges in column scope.
 var AllColumnPrivs = []PrivilegeType{SelectPriv, InsertPriv, UpdatePriv}
