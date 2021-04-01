@@ -142,6 +142,7 @@ import (
 	groups            "GROUPS"
 	having            "HAVING"
 	highPriority      "HIGH_PRIORITY"
+	hint              "HINT"
 	hourMicrosecond   "HOUR_MICROSECOND"
 	hourMinute        "HOUR_MINUTE"
 	hourSecond        "HOUR_SECOND"
@@ -2803,6 +2804,10 @@ ColumnOption:
 |	"COMMENT" stringLit
 	{
 		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionComment, Expr: ast.NewValueExpr($2, "", "")}
+	}
+|	"HINT" stringLit
+	{
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionHint, StrValue: $2}
 	}
 |	ConstraintKeywordOpt "CHECK" '(' Expression ')' EnforcedOrNotOrNotNullOpt
 	{

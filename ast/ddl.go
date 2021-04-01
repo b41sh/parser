@@ -459,6 +459,7 @@ const (
 	ColumnOptionColumnFormat
 	ColumnOptionStorage
 	ColumnOptionAutoRandom
+	ColumnOptionHint
 )
 
 var (
@@ -572,6 +573,9 @@ func (n *ColumnOption) Restore(ctx *format.RestoreCtx) error {
 		if n.AutoRandomBitLength != types.UnspecifiedLength {
 			ctx.WritePlainf("(%d)", n.AutoRandomBitLength)
 		}
+	case ColumnOptionHint:
+		ctx.WriteKeyWord("HINT ")
+		ctx.WritePlain(n.StrValue)
 	default:
 		return errors.New("An error occurred while splicing ColumnOption")
 	}
