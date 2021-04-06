@@ -2269,6 +2269,7 @@ const (
 	// AlterTableSetTiFlashReplica uses to set the table TiFlash replica.
 	AlterTableSetTiFlashReplica
 	AlterTablePlacement
+	AlterTableUpload
 	AlterTableAtoi
 	AlterTableProperties
 )

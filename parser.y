@@ -2078,6 +2078,12 @@ AlterTableSpec:
 			PlacementSpecs: $1.([]*ast.PlacementSpec),
 		}
 	}
+|	tblProperties
+	{
+		$$ = &ast.AlterTableSpec{
+			Tp: ast.AlterTableUpload,
+		}
+	}
 |	"ATOI" "COLUMN"
 	{
 		$$ = &ast.AlterTableSpec{
