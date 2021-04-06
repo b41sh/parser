@@ -163,6 +163,7 @@ var tokenMap = map[string]int{
 	"AS":                       as,
 	"ASC":                      asc,
 	"ASCII":                    ascii,
+	"ATOI":                     atoi,
 	"AUTO_ID_CACHE":            autoIdCache,
 	"AUTO_INCREMENT":           autoIncrement,
 	"AUTO_RANDOM":              autoRandom,

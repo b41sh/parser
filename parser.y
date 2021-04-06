@@ -295,6 +295,7 @@ import (
 	always                "ALWAYS"
 	any                   "ANY"
 	ascii                 "ASCII"
+	atoi                  "ATOI"
 	autoIdCache           "AUTO_ID_CACHE"
 	autoIncrement         "AUTO_INCREMENT"
 	autoRandom            "AUTO_RANDOM"
@@ -1576,6 +1577,13 @@ AlterTableSpec:
 			Options: $1.([]*ast.TableOption),
 		}
 	}
+|	"SET" "TBLPROPERTIES" '(' TablePropertyListOpt ')'
+	{
+		$$ = &ast.AlterTableSpec{
+			Tp:      ast.AlterTableProperties,
+			Options: []*ast.TableOption{{Tp: ast.TableOptionProperties, TableProperties: $4.([]*ast.TableProperty)}},
+		}
+	}
 |	"SET" "TIFLASH" "REPLICA" LengthNum LocationLabelList
 	{
 		tiflashReplicaSpec := &ast.TiFlashReplicaSpec{
@@ -2068,6 +2076,12 @@ AlterTableSpec:
 		$$ = &ast.AlterTableSpec{
 			Tp:             ast.AlterTablePlacement,
 			PlacementSpecs: $1.([]*ast.PlacementSpec),
+		}
+	}
+|	"ATOI" "COLUMN"
+	{
+		$$ = &ast.AlterTableSpec{
+			Tp: ast.AlterTableAtoi,
 		}
 	}
 
@@ -5223,6 +5237,7 @@ UnReservedKeyword:
 	"ACTION"
 |	"ADVISE"
 |	"ASCII"
+|	"ATOI"
 |	"AUTO_ID_CACHE"
 |	"AUTO_INCREMENT"
 |	"AFTER"

@@ -2269,6 +2269,8 @@ const (
 	// AlterTableSetTiFlashReplica uses to set the table TiFlash replica.
 	AlterTableSetTiFlashReplica
 	AlterTablePlacement
+	AlterTableAtoi
+	AlterTableProperties
 )
 
 // LockType is the type for AlterTableSpec.
@@ -2435,6 +2437,20 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 				if err := opt.Restore(ctx); err != nil {
 					return errors.Annotatef(err, "An error occurred while restore AlterTableSpec.Options[%d]", i)
 				}
+			}
+		}
+	case AlterTableProperties:
+		if n.Options[0].Tp == TableOptionProperties {
+			for _, opt := range n.Options {
+				ctx.WriteKeyWord("TBLPROPERTIES ")
+				ctx.WritePlain("(")
+				for i, tableProperty := range opt.TableProperties {
+					tableProperty.Restore(ctx)
+					if i < len(opt.TableProperties)-1 {
+						ctx.WritePlain(",")
+					}
+				}
+				ctx.WritePlain(")")
 			}
 		}
 	case AlterTableAddColumns:
@@ -2842,6 +2858,8 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 				return errors.Annotatef(err, "An error occurred while restore AlterTableSpec.PlacementSpecs[%d]", i)
 			}
 		}
+	case AlterTableAtoi:
+		ctx.WriteKeyWord("ATOI")
 	default:
 		// TODO: not support
 		ctx.WritePlainf(" /* AlterTableType(%d) is not supported */ ", n.Tp)
