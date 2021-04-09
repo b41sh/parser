@@ -693,6 +693,7 @@ import (
 	samples                    "SAMPLES"
 	statistics                 "STATISTICS"
 	stats                      "STATS"
+	localFile                  "LOCALFILE"
 	statsMeta                  "STATS_META"
 	statsHistograms            "STATS_HISTOGRAMS"
 	statsBuckets               "STATS_BUCKETS"
@@ -5584,6 +5585,7 @@ TiDBKeyword:
 |	"SAMPLES"
 |	"STATISTICS"
 |	"STATS"
+|	"LOCALFILE"
 |	"STATS_META"
 |	"STATS_HISTOGRAMS"
 |	"STATS_TOPN"
@@ -12269,6 +12271,14 @@ LoadStatsStmt:
 	{
 		$$ = &ast.LoadStatsStmt{
 			Path: $3,
+		}
+	}
+|	"LOAD" "LOCALFILE" stringLit stringLit
+	{
+		$$ = &ast.LoadStatsStmt{
+			Path:   $3,
+			DsName: $4,
+			IsDs:   true,
 		}
 	}
 

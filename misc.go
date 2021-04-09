@@ -647,6 +647,7 @@ var tokenMap = map[string]int{
 	"STATS_PERSISTENT":         statsPersistent,
 	"STATS_SAMPLE_PAGES":       statsSamplePages,
 	"STATS":                    stats,
+	"LOCALFILE":                localFile,
 	"STATUS":                   status,
 	"STD":                      stddevPop,
 	"STDDEV_POP":               stddevPop,

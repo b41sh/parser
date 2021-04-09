@@ -206,7 +206,9 @@ func (n *DropStatsStmt) Accept(v Visitor) (Node, bool) {
 type LoadStatsStmt struct {
 	stmtNode
 
-	Path string
+	IsDs   bool
+	DsName string
+	Path   string
 }
 
 // Restore implements Node interface.
