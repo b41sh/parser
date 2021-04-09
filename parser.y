@@ -851,6 +851,7 @@ import (
 	KillStmt               "Kill statement"
 	LoadDataStmt           "Load data statement"
 	LoadStatsStmt          "Load statistic statement"
+	LoadFileStmt           "Load localFile statement"
 	LockTablesStmt         "Lock tables statement"
 	PreparedStmt           "PreparedStmt"
 	PurgeImportStmt        "PURGE IMPORT statement that removes a IMPORT task record"
@@ -10072,6 +10073,7 @@ Statement:
 |	KillStmt
 |	LoadDataStmt
 |	LoadStatsStmt
+|	LoadFileStmt
 |	PreparedStmt
 |	PurgeImportStmt
 |	RollbackStmt
@@ -12273,12 +12275,13 @@ LoadStatsStmt:
 			Path: $3,
 		}
 	}
-|	"LOAD" "LOCALFILE" stringLit stringLit
+
+LoadFileStmt:
+	"LOAD" "LOCALFILE" stringLit stringLit
 	{
-		$$ = &ast.LoadStatsStmt{
+		$$ = &ast.LoadFileStmt{
 			Path:   $3,
 			DsName: $4,
-			IsDs:   true,
 		}
 	}
 
