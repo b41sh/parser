@@ -426,6 +426,7 @@ var tokenMap = map[string]int{
 	"LIST":                     list,
 	"LOAD":                     load,
 	"LOCAL":                    local,
+	"DS":                       ds,
 	"LOCALTIME":                localTime,
 	"LOCALTIMESTAMP":           localTs,
 	"LOCATION":                 location,

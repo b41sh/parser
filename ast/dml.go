@@ -1501,6 +1501,7 @@ func (n *ColumnNameOrUserVar) Accept(v Visitor) (node Node, ok bool) {
 type LoadDataStmt struct {
 	dmlNode
 
+	IsDs              bool
 	IsLocal           bool
 	Path              string
 	OnDuplicate       OnDuplicateKeyHandlingType

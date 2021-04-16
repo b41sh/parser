@@ -428,6 +428,7 @@ import (
 	level                 "LEVEL"
 	list                  "LIST"
 	local                 "LOCAL"
+	ds                    "DS"
 	location              "LOCATION"
 	logs                  "LOGS"
 	master                "MASTER"
@@ -1000,6 +1001,7 @@ import (
 	LoadDataSetList                        "Load data specifications"
 	LoadDataSetItem                        "Single load data specification"
 	LocalOpt                               "Local opt"
+	DsOpt                                  "DS opt"
 	LockClause                             "Alter table lock clause"
 	LogTypeOpt                             "Optional log type used in FLUSH statements"
 	NumLiteral                             "Num/Int/Float/Decimal Literal"
@@ -5304,6 +5306,7 @@ UnReservedKeyword:
 |	"INSERT_METHOD"
 |	"LESS"
 |	"LOCAL"
+|	"DS"
 |	"LAST"
 |	"NAMES"
 |	"NVARCHAR"
@@ -11940,16 +11943,19 @@ RevokeRoleStmt:
  * See https://dev.mysql.com/doc/refman/5.7/en/load-data.html
  *******************************************************************************************/
 LoadDataStmt:
-	"LOAD" "DATA" LocalOpt "INFILE" stringLit DuplicateOpt "INTO" "TABLE" TableName CharsetOpt Fields Lines IgnoreLines ColumnNameOrUserVarListOptWithBrackets LoadDataSetSpecOpt
+	"LOAD" "DATA" DsOpt LocalOpt "INFILE" stringLit DuplicateOpt "INTO" "TABLE" TableName CharsetOpt Fields Lines IgnoreLines ColumnNameOrUserVarListOptWithBrackets LoadDataSetSpecOpt
 	{
 		x := &ast.LoadDataStmt{
-			Path:               $5,
-			OnDuplicate:        $6.(ast.OnDuplicateKeyHandlingType),
-			Table:              $9.(*ast.TableName),
-			ColumnsAndUserVars: $14.([]*ast.ColumnNameOrUserVar),
-			IgnoreLines:        $13.(uint64),
+			Path:               $6,
+			OnDuplicate:        $7.(ast.OnDuplicateKeyHandlingType),
+			Table:              $10.(*ast.TableName),
+			ColumnsAndUserVars: $15.([]*ast.ColumnNameOrUserVar),
+			IgnoreLines:        $14.(uint64),
 		}
 		if $3 != nil {
+			x.IsDs = true
+		}
+		if $4 != nil {
 			x.IsLocal = true
 			// See https://dev.mysql.com/doc/refman/5.7/en/load-data.html#load-data-duplicate-key-handling
 			// If you do not specify IGNORE or REPLACE modifier , then we set default behavior to IGNORE when LOCAL modifier is specified
@@ -11957,14 +11963,14 @@ LoadDataStmt:
 				x.OnDuplicate = ast.OnDuplicateKeyHandlingIgnore
 			}
 		}
-		if $11 != nil {
-			x.FieldsInfo = $11.(*ast.FieldsClause)
-		}
 		if $12 != nil {
-			x.LinesInfo = $12.(*ast.LinesClause)
+			x.FieldsInfo = $12.(*ast.FieldsClause)
 		}
-		if $15 != nil {
-			x.ColumnAssignments = $15.([]*ast.Assignment)
+		if $13 != nil {
+			x.LinesInfo = $13.(*ast.LinesClause)
+		}
+		if $16 != nil {
+			x.ColumnAssignments = $16.([]*ast.Assignment)
 		}
 		columns := []*ast.ColumnName{}
 		for _, v := range x.ColumnsAndUserVars {
@@ -11995,6 +12001,15 @@ LocalOpt:
 		$$ = nil
 	}
 |	"LOCAL"
+	{
+		$$ = $1
+	}
+
+DsOpt:
+	{
+		$$ = nil
+	}
+|	"DS"
 	{
 		$$ = $1
 	}
