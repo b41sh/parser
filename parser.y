@@ -2088,7 +2088,13 @@ AlterTableSpec:
 			Tp: ast.AlterTableUpload,
 		}
 	}
-|	"ATOI" "COLUMN"
+|	tblProperties "ATOI"
+	{
+		$$ = &ast.AlterTableSpec{
+			Tp: ast.AlterTableUploadWithAtoi,
+		}
+	}
+|	"DS" "ATOI"
 	{
 		$$ = &ast.AlterTableSpec{
 			Tp: ast.AlterTableAtoi,

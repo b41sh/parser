@@ -2270,6 +2270,7 @@ const (
 	AlterTableSetTiFlashReplica
 	AlterTablePlacement
 	AlterTableUpload
+	AlterTableUploadWithAtoi
 	AlterTableAtoi
 	AlterTableProperties
 )
@@ -2861,6 +2862,8 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 		}
 	case AlterTableAtoi:
 		ctx.WriteKeyWord("ATOI")
+	case AlterTableUploadWithAtoi:
+		ctx.WriteKeyWord("UPLOAD AND ATOI")
 	default:
 		// TODO: not support
 		ctx.WritePlainf(" /* AlterTableType(%d) is not supported */ ", n.Tp)
