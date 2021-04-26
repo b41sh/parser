@@ -460,6 +460,7 @@ const (
 	ColumnOptionStorage
 	ColumnOptionAutoRandom
 	ColumnOptionHint
+	ColumnOptionTrans
 )
 
 var (
@@ -575,6 +576,12 @@ func (n *ColumnOption) Restore(ctx *format.RestoreCtx) error {
 		}
 	case ColumnOptionHint:
 		ctx.WriteKeyWord("HINT ")
+		ctx.WritePlain(n.StrValue)
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotate(err, "An error occurred while splicing ColumnOption HintValue Expr")
+		}
+	case ColumnOptionTrans:
+		ctx.WriteKeyWord("DTrans ")
 		ctx.WritePlain(n.StrValue)
 	default:
 		return errors.New("An error occurred while splicing ColumnOption")
@@ -1865,7 +1872,10 @@ func (n *TableProperty) Restore(ctx *format.RestoreCtx) error {
 	ctx.WritePlain(n.Key.O)
 	ctx.WritePlain("=")
 	for i, tablePropertyValue := range n.Values {
-		tablePropertyValue.Restore(ctx)
+		err := tablePropertyValue.Restore(ctx)
+		if err != nil {
+			return err
+		}
 		if i < len(n.Values)-1 {
 			ctx.WritePlain("|")
 		}
@@ -2271,8 +2281,8 @@ const (
 	AlterTablePlacement
 	AlterTableUpload
 	AlterTableUploadWithAtoi
-	AlterTableAtoi
 	AlterTableProperties
+	AlterTableUploadWithDict
 )
 
 // LockType is the type for AlterTableSpec.
@@ -2860,8 +2870,6 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 				return errors.Annotatef(err, "An error occurred while restore AlterTableSpec.PlacementSpecs[%d]", i)
 			}
 		}
-	case AlterTableAtoi:
-		ctx.WriteKeyWord("ATOI")
 	case AlterTableUploadWithAtoi:
 		ctx.WriteKeyWord("UPLOAD AND ATOI")
 	default:

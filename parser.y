@@ -143,6 +143,7 @@ import (
 	having            "HAVING"
 	highPriority      "HIGH_PRIORITY"
 	hint              "HINT"
+	dTrans            "DTRANS"
 	hourMicrosecond   "HOUR_MICROSECOND"
 	hourMinute        "HOUR_MINUTE"
 	hourSecond        "HOUR_SECOND"
@@ -580,6 +581,7 @@ import (
 	task                  "TASK"
 	tblProperties         "TBLPROPERTIES"
 	temporary             "TEMPORARY"
+	dstrans               "DSTRANS"
 	temptable             "TEMPTABLE"
 	textType              "TEXT"
 	than                  "THAN"
@@ -1011,6 +1013,7 @@ import (
 	DuplicateOpt                           "[IGNORE|REPLACE] in CREATE TABLE ... SELECT statement or LOAD DATA statement"
 	OptFull                                "Full or empty"
 	OptTemporary                           "TEMPORARY or empty"
+	DTransOpt                              "dstrans or empty"
 	OptOrder                               "Optional ordering keyword: ASC/DESC. Default to ASC"
 	Order                                  "Ordering keyword: ASC or DESC"
 	OptionLevel                            "3 levels used by lightning config"
@@ -2082,22 +2085,22 @@ AlterTableSpec:
 			PlacementSpecs: $1.([]*ast.PlacementSpec),
 		}
 	}
-|	tblProperties
+|	tblProperties DTransOpt
 	{
-		$$ = &ast.AlterTableSpec{
-			Tp: ast.AlterTableUpload,
+		if $2.(bool) {
+			$$ = &ast.AlterTableSpec{
+				Tp: ast.AlterTableUploadWithDict,
+			}
+		} else {
+			$$ = &ast.AlterTableSpec{
+				Tp: ast.AlterTableUpload,
+			}
 		}
 	}
 |	tblProperties "ATOI"
 	{
 		$$ = &ast.AlterTableSpec{
 			Tp: ast.AlterTableUploadWithAtoi,
-		}
-	}
-|	"DS" "ATOI"
-	{
-		$$ = &ast.AlterTableSpec{
-			Tp: ast.AlterTableAtoi,
 		}
 	}
 
@@ -2838,6 +2841,10 @@ ColumnOption:
 |	"HINT" stringLit
 	{
 		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionHint, StrValue: $2}
+	}
+|	"DTRANS" stringLit
+	{
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionTrans, StrValue: $2}
 	}
 |	ConstraintKeywordOpt "CHECK" '(' Expression ')' EnforcedOrNotOrNotNullOpt
 	{
@@ -5084,6 +5091,16 @@ IfNotExists:
 		$$ = true
 	}
 
+DTransOpt:
+	/* empty */
+	{
+		$$ = false
+	}
+|	"DSTRANS"
+	{
+		$$ = true
+	}
+
 IgnoreOptional:
 	{
 		$$ = false
@@ -5438,6 +5455,7 @@ UnReservedKeyword:
 |	"SLAVE"
 |	"RELOAD"
 |	"TEMPORARY"
+|	"DSTRANS"
 |	"ROUTINE"
 |	"EVENT"
 |	"ALGORITHM"

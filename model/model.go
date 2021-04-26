@@ -113,6 +113,7 @@ type ColumnInfo struct {
 	State               SchemaState `json:"state"`
 	Comment             string      `json:"comment"`
 	Hint                string      `json:"hint"`
+	DTrans              string      `json:"dtrans"`
 	// A hidden column is used internally(expression index) and are not accessible by users.
 	Hidden           bool `json:"hidden"`
 	*ChangeStateInfo `json:"change_state_info"`
