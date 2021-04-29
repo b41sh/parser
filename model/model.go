@@ -114,6 +114,9 @@ type ColumnInfo struct {
 	Comment             string      `json:"comment"`
 	Hint                string      `json:"hint"`
 	DTrans              string      `json:"dtrans"`
+	ResTrans            string      `json:"res_trans"`
+	IsRsTrans           bool        `json:"is_res_trans"`
+	PrivTrans           bool        `json:"privtrans"`
 	// A hidden column is used internally(expression index) and are not accessible by users.
 	Hidden           bool `json:"hidden"`
 	*ChangeStateInfo `json:"change_state_info"`

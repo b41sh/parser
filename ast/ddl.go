@@ -461,6 +461,8 @@ const (
 	ColumnOptionAutoRandom
 	ColumnOptionHint
 	ColumnOptionTrans
+	ColumnOptionPrivTrans
+	ColumnOptionResTrans
 )
 
 var (
@@ -481,7 +483,8 @@ type ColumnOption struct {
 	// For ColumnOptionGenerated, it's the target expression.
 	Expr ExprNode
 	// Stored is only for ColumnOptionGenerated, default is false.
-	Stored bool
+	Stored    bool
+	IsRsTrans bool
 	// Refer is used for foreign key.
 	Refer               *ReferenceDef
 	StrValue            string
@@ -583,6 +586,17 @@ func (n *ColumnOption) Restore(ctx *format.RestoreCtx) error {
 	case ColumnOptionTrans:
 		ctx.WriteKeyWord("DTrans ")
 		ctx.WritePlain(n.StrValue)
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotate(err, "An error occurred while splicing ColumnOption DtransValue Expr")
+		}
+	case ColumnOptionPrivTrans:
+		ctx.WriteKeyWord("PRIVTRANS ")
+	case ColumnOptionResTrans:
+		ctx.WriteKeyWord("RsTrans ")
+		ctx.WritePlain(n.StrValue)
+		if err := n.Expr.Restore(ctx); err != nil {
+			return errors.Annotate(err, "An error occurred while splicing ColumnOption DtransValue Expr")
+		}
 	default:
 		return errors.New("An error occurred while splicing ColumnOption")
 	}

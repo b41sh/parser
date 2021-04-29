@@ -144,6 +144,7 @@ import (
 	highPriority      "HIGH_PRIORITY"
 	hint              "HINT"
 	dTrans            "DTRANS"
+	rsTrans           "RSTRANS"
 	hourMicrosecond   "HOUR_MICROSECOND"
 	hourMinute        "HOUR_MINUTE"
 	hourSecond        "HOUR_SECOND"
@@ -581,7 +582,7 @@ import (
 	task                  "TASK"
 	tblProperties         "TBLPROPERTIES"
 	temporary             "TEMPORARY"
-	dstrans               "DSTRANS"
+	dictrans              "DICTRANS"
 	temptable             "TEMPTABLE"
 	textType              "TEXT"
 	than                  "THAN"
@@ -2846,6 +2847,10 @@ ColumnOption:
 	{
 		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionTrans, StrValue: $2}
 	}
+|	"RSTRANS" stringLit
+	{
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionResTrans, IsRsTrans: true, StrValue: $2}
+	}
 |	ConstraintKeywordOpt "CHECK" '(' Expression ')' EnforcedOrNotOrNotNullOpt
 	{
 		// See https://dev.mysql.com/doc/refman/5.7/en/create-table.html
@@ -5096,7 +5101,7 @@ DTransOpt:
 	{
 		$$ = false
 	}
-|	"DSTRANS"
+|	"DICTRANS"
 	{
 		$$ = true
 	}
@@ -5455,7 +5460,7 @@ UnReservedKeyword:
 |	"SLAVE"
 |	"RELOAD"
 |	"TEMPORARY"
-|	"DSTRANS"
+|	"DICTRANS"
 |	"ROUTINE"
 |	"EVENT"
 |	"ALGORITHM"
