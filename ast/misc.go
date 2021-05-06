@@ -2730,6 +2730,12 @@ type HintSetVar struct {
 	Value   string
 }
 
+// HintUseMpp is the payload of `USE_MPP` hint
+type HintUseMpp struct {
+	TableName model.CIStr
+	RowNumber uint64
+}
+
 // HintTable is table in the hint. It may have query block info.
 type HintTable struct {
 	DBName        model.CIStr
@@ -2835,6 +2841,11 @@ func (n *TableOptimizerHint) Restore(ctx *format.RestoreCtx) error {
 		ctx.WriteString(hintData.VarName)
 		ctx.WritePlain(", ")
 		ctx.WriteString(hintData.Value)
+	case "use_mpp":
+		hintData := n.HintData.(HintUseMpp)
+		ctx.WriteString(hintData.TableName.String())
+		ctx.WritePlain(", ")
+		ctx.WritePlainf("%d", hintData.RowNumber)
 	}
 	ctx.WritePlain(")")
 	return nil

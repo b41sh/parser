@@ -119,6 +119,7 @@ import (
 	hintFirstMatch      "FIRSTMATCH"
 	hintLooseScan       "LOOSESCAN"
 	hintMaterialization "MATERIALIZATION"
+	hintUseMpp          "USE_MPP"
 
 %type	<ident>
 	Identifier                             "identifier (including keywords)"
@@ -260,6 +261,16 @@ TableOptimizerHintOpt:
 			HintData: ast.HintSetVar{
 				VarName: $3,
 				Value:   $5,
+			},
+		}
+	}
+|	"USE_MPP" '(' Identifier '=' hintIntLit ')'
+	{
+		$$ = &ast.TableOptimizerHint{
+			HintName: model.NewCIStr($1),
+			HintData: ast.HintUseMpp{
+				TableName: model.NewCIStr($3),
+				RowNumber: uint64($5),
 			},
 		}
 	}
@@ -655,4 +666,5 @@ Identifier:
 |	"FIRSTMATCH"
 |	"LOOSESCAN"
 |	"MATERIALIZATION"
+|	"USE_MPP"
 %%

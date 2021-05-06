@@ -922,6 +922,7 @@ var hintTokenMap = map[string]int{
 	"FIRSTMATCH":      hintFirstMatch,
 	"LOOSESCAN":       hintLooseScan,
 	"MATERIALIZATION": hintMaterialization,
+	"USE_MPP":         hintUseMpp,
 }
 
 func (s *Scanner) isTokenIdentifier(lit string, offset int) int {
