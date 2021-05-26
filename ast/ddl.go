@@ -459,9 +459,11 @@ const (
 	ColumnOptionColumnFormat
 	ColumnOptionStorage
 	ColumnOptionAutoRandom
-	ColumnOptionHint
-	ColumnOptionTrans
-	ColumnOptionPrivTrans
+	// 使用hash函数转化列数据
+	ColumnOptionHashTrans
+	// 使用字典表转化列数据
+	ColumnOptionDictTrans
+	// 使用字典表转化计算结果
 	ColumnOptionResTrans
 )
 
@@ -483,8 +485,7 @@ type ColumnOption struct {
 	// For ColumnOptionGenerated, it's the target expression.
 	Expr ExprNode
 	// Stored is only for ColumnOptionGenerated, default is false.
-	Stored    bool
-	IsRsTrans bool
+	Stored bool
 	// Refer is used for foreign key.
 	Refer               *ReferenceDef
 	StrValue            string
@@ -577,20 +578,18 @@ func (n *ColumnOption) Restore(ctx *format.RestoreCtx) error {
 		if n.AutoRandomBitLength != types.UnspecifiedLength {
 			ctx.WritePlainf("(%d)", n.AutoRandomBitLength)
 		}
-	case ColumnOptionHint:
-		ctx.WriteKeyWord("HINT ")
+	case ColumnOptionHashTrans:
+		ctx.WriteKeyWord("HTrans ")
 		ctx.WritePlain(n.StrValue)
 		if err := n.Expr.Restore(ctx); err != nil {
-			return errors.Annotate(err, "An error occurred while splicing ColumnOption HintValue Expr")
+			return errors.Annotate(err, "An error occurred while splicing ColumnOption HashTransValue Expr")
 		}
-	case ColumnOptionTrans:
+	case ColumnOptionDictTrans:
 		ctx.WriteKeyWord("DTrans ")
 		ctx.WritePlain(n.StrValue)
 		if err := n.Expr.Restore(ctx); err != nil {
 			return errors.Annotate(err, "An error occurred while splicing ColumnOption DtransValue Expr")
 		}
-	case ColumnOptionPrivTrans:
-		ctx.WriteKeyWord("PRIVTRANS ")
 	case ColumnOptionResTrans:
 		ctx.WriteKeyWord("RsTrans ")
 		ctx.WritePlain(n.StrValue)
