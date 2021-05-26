@@ -79,6 +79,7 @@ const (
 	ActionAlterTableAlterPartition      ActionType = 46
 	ActionRenameTables                  ActionType = 47
 	ActionAlterTableProperties          ActionType = 48
+	ActionAlterTableEngineType          ActionType = 49
 )
 
 const (
@@ -135,6 +136,7 @@ var actionMap = map[ActionType]string{
 	ActionAlterCheckConstraint:          "alter check constraint",
 	ActionAlterTableAlterPartition:      "alter partition",
 	ActionAlterTableProperties:          "set tblproperties",
+	ActionAlterTableEngineType:          "engine =",
 }
 
 // String return current ddl action in string

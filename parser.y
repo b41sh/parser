@@ -1585,6 +1585,14 @@ AlterTableSpec:
 			Options: $1.([]*ast.TableOption),
 		}
 	}
+|	"ENGINE" "=" stringLit
+	{
+		op := &ast.AlterTableSpec{
+			Tp:      ast.AlterTableOption,
+			Options: []*ast.TableOption{{Tp: ast.TableOptionEngine, StrValue: $1}},
+		}
+		$$ = op
+	}
 |	"SET" "TBLPROPERTIES" '(' TablePropertyListOpt ')'
 	{
 		$$ = &ast.AlterTableSpec{

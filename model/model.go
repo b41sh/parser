@@ -339,6 +339,9 @@ type TableInfo struct {
 
 	// table properties in Hive
 	TableProperties []*TablePropertyInfo `json:"table_properties"`
+
+	// EngineType describes the type of engine for a table
+	EngineType string `json:"engine_type"`
 }
 
 // TableLockInfo provides meta data describing a table lock.
