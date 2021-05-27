@@ -142,7 +142,7 @@ import (
 	groups            "GROUPS"
 	having            "HAVING"
 	highPriority      "HIGH_PRIORITY"
-	hint              "HINT"
+	hTrans            "HTRANS"
 	dTrans            "DTRANS"
 	rsTrans           "RSTRANS"
 	hourMicrosecond   "HOUR_MICROSECOND"
@@ -361,6 +361,7 @@ import (
 	deallocate            "DEALLOCATE"
 	definer               "DEFINER"
 	delayKeyWrite         "DELAY_KEY_WRITE"
+	dictrans              "DICTRANS"
 	directory             "DIRECTORY"
 	disable               "DISABLE"
 	discard               "DISCARD"
@@ -582,7 +583,6 @@ import (
 	task                  "TASK"
 	tblProperties         "TBLPROPERTIES"
 	temporary             "TEMPORARY"
-	dictrans              "DICTRANS"
 	temptable             "TEMPTABLE"
 	textType              "TEXT"
 	than                  "THAN"
@@ -697,7 +697,6 @@ import (
 	samples                    "SAMPLES"
 	statistics                 "STATISTICS"
 	stats                      "STATS"
-	localFile                  "LOCALFILE"
 	statsMeta                  "STATS_META"
 	statsHistograms            "STATS_HISTOGRAMS"
 	statsBuckets               "STATS_BUCKETS"
@@ -855,7 +854,6 @@ import (
 	KillStmt               "Kill statement"
 	LoadDataStmt           "Load data statement"
 	LoadStatsStmt          "Load statistic statement"
-	LoadFileStmt           "Load localFile statement"
 	LockTablesStmt         "Lock tables statement"
 	PreparedStmt           "PreparedStmt"
 	PurgeImportStmt        "PURGE IMPORT statement that removes a IMPORT task record"
@@ -1014,7 +1012,6 @@ import (
 	DuplicateOpt                           "[IGNORE|REPLACE] in CREATE TABLE ... SELECT statement or LOAD DATA statement"
 	OptFull                                "Full or empty"
 	OptTemporary                           "TEMPORARY or empty"
-	DTransOpt                              "dstrans or empty"
 	OptOrder                               "Optional ordering keyword: ASC/DESC. Default to ASC"
 	Order                                  "Ordering keyword: ASC or DESC"
 	OptionLevel                            "3 levels used by lightning config"
@@ -2094,22 +2091,22 @@ AlterTableSpec:
 			PlacementSpecs: $1.([]*ast.PlacementSpec),
 		}
 	}
-|	tblProperties DTransOpt
+|	tblProperties "DICTRANS"
 	{
-		if $2.(bool) {
-			$$ = &ast.AlterTableSpec{
-				Tp: ast.AlterTableUploadWithDict,
-			}
-		} else {
-			$$ = &ast.AlterTableSpec{
-				Tp: ast.AlterTableUpload,
-			}
+		$$ = &ast.AlterTableSpec{
+			Tp: ast.AlterTableUploadWithDict,
 		}
 	}
 |	tblProperties "ATOI"
 	{
 		$$ = &ast.AlterTableSpec{
 			Tp: ast.AlterTableUploadWithAtoi,
+		}
+	}
+|	tblProperties
+	{
+		$$ = &ast.AlterTableSpec{
+			Tp: ast.AlterTableUpload,
 		}
 	}
 
@@ -2847,17 +2844,17 @@ ColumnOption:
 	{
 		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionComment, Expr: ast.NewValueExpr($2, "", "")}
 	}
-|	"HINT" stringLit
+|	"HTRANS" stringLit
 	{
-		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionHint, StrValue: $2}
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionHashTrans, StrValue: $2}
 	}
 |	"DTRANS" stringLit
 	{
-		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionTrans, StrValue: $2}
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionDictTrans, StrValue: $2}
 	}
 |	"RSTRANS" stringLit
 	{
-		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionResTrans, IsRsTrans: true, StrValue: $2}
+		$$ = &ast.ColumnOption{Tp: ast.ColumnOptionResTrans, StrValue: $2}
 	}
 |	ConstraintKeywordOpt "CHECK" '(' Expression ')' EnforcedOrNotOrNotNullOpt
 	{
@@ -5104,16 +5101,6 @@ IfNotExists:
 		$$ = true
 	}
 
-DTransOpt:
-	/* empty */
-	{
-		$$ = false
-	}
-|	"DICTRANS"
-	{
-		$$ = true
-	}
-
 IgnoreOptional:
 	{
 		$$ = false
@@ -5626,7 +5613,6 @@ TiDBKeyword:
 |	"SAMPLES"
 |	"STATISTICS"
 |	"STATS"
-|	"LOCALFILE"
 |	"STATS_META"
 |	"STATS_HISTOGRAMS"
 |	"STATS_TOPN"
@@ -10113,7 +10099,6 @@ Statement:
 |	KillStmt
 |	LoadDataStmt
 |	LoadStatsStmt
-|	LoadFileStmt
 |	PreparedStmt
 |	PurgeImportStmt
 |	RollbackStmt
@@ -12325,15 +12310,6 @@ LoadStatsStmt:
 	{
 		$$ = &ast.LoadStatsStmt{
 			Path: $3,
-		}
-	}
-
-LoadFileStmt:
-	"LOAD" "LOCALFILE" stringLit stringLit
-	{
-		$$ = &ast.LoadFileStmt{
-			Path:   $3,
-			DsName: $4,
 		}
 	}
 
