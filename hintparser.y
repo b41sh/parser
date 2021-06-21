@@ -120,6 +120,7 @@ import (
 	hintLooseScan       "LOOSESCAN"
 	hintMaterialization "MATERIALIZATION"
 	hintUseMpp          "USE_MPP"
+	hintShardingNum     "SHARDING_NUM"
 
 %type	<ident>
 	Identifier                             "identifier (including keywords)"
@@ -272,6 +273,13 @@ TableOptimizerHintOpt:
 				TableName: model.NewCIStr($3),
 				RowNumber: uint64($5),
 			},
+		}
+	}
+|	"SHARDING_NUM" '(' hintIntLit ')'
+	{
+		$$ = &ast.TableOptimizerHint{
+			HintName: model.NewCIStr($1),
+			HintData: int64($3),
 		}
 	}
 |	"RESOURCE_GROUP" '(' Identifier ')'
@@ -667,4 +675,5 @@ Identifier:
 |	"LOOSESCAN"
 |	"MATERIALIZATION"
 |	"USE_MPP"
+|	"SHARDING_NUM"
 %%
