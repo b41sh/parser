@@ -494,6 +494,7 @@ type ColumnOption struct {
 	Enforced bool
 	// Name is only used for Check Constraint name.
 	ConstraintName string
+	PrimaryKeyTp   model.PrimaryKeyType
 }
 
 // Restore implements Node interface.
@@ -503,6 +504,11 @@ func (n *ColumnOption) Restore(ctx *format.RestoreCtx) error {
 		return nil
 	case ColumnOptionPrimaryKey:
 		ctx.WriteKeyWord("PRIMARY KEY")
+		pkTp := n.PrimaryKeyTp.String()
+		if len(pkTp) != 0 {
+			ctx.WritePlain(" ")
+			ctx.WriteKeyWord(pkTp)
+		}
 	case ColumnOptionNotNull:
 		ctx.WriteKeyWord("NOT NULL")
 	case ColumnOptionAutoIncrement:
@@ -643,12 +649,20 @@ type IndexOption struct {
 	Comment      string
 	ParserName   model.CIStr
 	Visibility   IndexVisibility
+	PrimaryKeyTp model.PrimaryKeyType
 }
 
 // Restore implements Node interface.
 func (n *IndexOption) Restore(ctx *format.RestoreCtx) error {
 	hasPrevOption := false
+	if n.PrimaryKeyTp != model.PrimaryKeyTypeDefault {
+		ctx.WriteKeyWord(n.PrimaryKeyTp.String())
+		hasPrevOption = true
+	}
 	if n.KeyBlockSize > 0 {
+		if hasPrevOption {
+			ctx.WritePlain(" ")
+		}
 		ctx.WriteKeyWord("KEY_BLOCK_SIZE")
 		ctx.WritePlainf("=%d", n.KeyBlockSize)
 		hasPrevOption = true
@@ -943,29 +957,44 @@ func (n *ColumnDef) Validate() bool {
 	return !(generatedCol && illegalOpt4gc)
 }
 
+type TemporaryKeyword int
+
+const (
+	TemporaryNone TemporaryKeyword = iota
+	TemporaryGlobal
+	TemporaryLocal
+)
+
 // CreateTableStmt is a statement to create a table.
 // See https://dev.mysql.com/doc/refman/5.7/en/create-table.html
 type CreateTableStmt struct {
 	ddlNode
 
 	IfNotExists bool
-	IsTemporary bool
-	Table       *TableName
-	ReferTable  *TableName
-	Cols        []*ColumnDef
-	Constraints []*Constraint
-	Options     []*TableOption
-	Partition   *PartitionOptions
-	OnDuplicate OnDuplicateKeyHandlingType
-	Select      ResultSetNode
+	TemporaryKeyword
+	// Meanless when TemporaryKeyword is not TemporaryGlobal.
+	// ON COMMIT DELETE ROWS => true
+	// ON COMMIT PRESERVE ROW => false
+	OnCommitDelete bool
+	Table          *TableName
+	ReferTable     *TableName
+	Cols           []*ColumnDef
+	Constraints    []*Constraint
+	Options        []*TableOption
+	Partition      *PartitionOptions
+	OnDuplicate    OnDuplicateKeyHandlingType
+	Select         ResultSetNode
 }
 
 // Restore implements Node interface.
 func (n *CreateTableStmt) Restore(ctx *format.RestoreCtx) error {
-	if n.IsTemporary {
-		ctx.WriteKeyWord("CREATE TEMPORARY TABLE ")
-	} else {
+	switch n.TemporaryKeyword {
+	case TemporaryNone:
 		ctx.WriteKeyWord("CREATE TABLE ")
+	case TemporaryGlobal:
+		ctx.WriteKeyWord("CREATE GLOBAL TEMPORARY TABLE ")
+	case TemporaryLocal:
+		ctx.WriteKeyWord("CREATE TEMPORARY TABLE ")
 	}
 	if n.IfNotExists {
 		ctx.WriteKeyWord("IF NOT EXISTS ")
@@ -1033,6 +1062,14 @@ func (n *CreateTableStmt) Restore(ctx *format.RestoreCtx) error {
 		}
 	}
 
+	if n.TemporaryKeyword == TemporaryGlobal {
+		if n.OnCommitDelete {
+			ctx.WriteKeyWord(" ON COMMIT DELETE ROWS")
+		} else {
+			ctx.WriteKeyWord(" ON COMMIT PRESERVE ROWS")
+		}
+	}
+
 	return nil
 }
 
@@ -1092,10 +1129,10 @@ func (n *CreateTableStmt) Accept(v Visitor) (Node, bool) {
 type DropTableStmt struct {
 	ddlNode
 
-	IfExists    bool
-	Tables      []*TableName
-	IsView      bool
-	IsTemporary bool // make sense ONLY if/when IsView == false
+	IfExists         bool
+	Tables           []*TableName
+	IsView           bool
+	TemporaryKeyword // make sense ONLY if/when IsView == false
 }
 
 // Restore implements Node interface.
@@ -1103,10 +1140,13 @@ func (n *DropTableStmt) Restore(ctx *format.RestoreCtx) error {
 	if n.IsView {
 		ctx.WriteKeyWord("DROP VIEW ")
 	} else {
-		if n.IsTemporary {
-			ctx.WriteKeyWord("DROP TEMPORARY TABLE ")
-		} else {
+		switch n.TemporaryKeyword {
+		case TemporaryNone:
 			ctx.WriteKeyWord("DROP TABLE ")
+		case TemporaryGlobal:
+			ctx.WriteKeyWord("DROP GLOBAL TEMPORARY TABLE ")
+		case TemporaryLocal:
+			ctx.WriteKeyWord("DROP TEMPORARY TABLE ")
 		}
 	}
 	if n.IfExists {
@@ -2292,6 +2332,8 @@ const (
 	// AlterTableSetTiFlashReplica uses to set the table TiFlash replica.
 	AlterTableSetTiFlashReplica
 	AlterTablePlacement
+	AlterTableAddStatistics
+	AlterTableDropStatistics
 	AlterTableUpload
 	AlterTableUploadWithAtoi
 	AlterTableProperties
@@ -2394,6 +2436,7 @@ type AlterTableSpec struct {
 	TiFlashReplica  *TiFlashReplicaSpec
 	PlacementSpecs  []*PlacementSpec
 	Writeable       bool
+	Statistics      *StatisticsSpec
 }
 
 type TiFlashReplicaSpec struct {
@@ -2435,6 +2478,35 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 			}
 			ctx.WriteString(v)
 		}
+	case AlterTableAddStatistics:
+		ctx.WriteKeyWord("ADD STATS_EXTENDED ")
+		if n.IfNotExists {
+			ctx.WriteKeyWord("IF NOT EXISTS ")
+		}
+		ctx.WriteName(n.Statistics.StatsName)
+		switch n.Statistics.StatsType {
+		case StatsTypeCardinality:
+			ctx.WriteKeyWord(" CARDINALITY(")
+		case StatsTypeDependency:
+			ctx.WriteKeyWord(" DEPENDENCY(")
+		case StatsTypeCorrelation:
+			ctx.WriteKeyWord(" CORRELATION(")
+		}
+		for i, col := range n.Statistics.Columns {
+			if i != 0 {
+				ctx.WritePlain(", ")
+			}
+			if err := col.Restore(ctx); err != nil {
+				return errors.Annotatef(err, "An error occurred while restore AddStatisticsSpec.Columns: [%v]", i)
+			}
+		}
+		ctx.WritePlain(")")
+	case AlterTableDropStatistics:
+		ctx.WriteKeyWord("DROP STATS_EXTENDED ")
+		if n.IfExists {
+			ctx.WriteKeyWord("IF EXISTS ")
+		}
+		ctx.WriteName(n.Statistics.StatsName)
 	case AlterTableOption:
 		switch {
 		case len(n.Options) == 2 && n.Options[0].Tp == TableOptionCharset && n.Options[1].Tp == TableOptionCollate:
@@ -2913,19 +2985,19 @@ func (n *AlterTableSpec) Accept(v Visitor) (Node, bool) {
 		}
 		n.NewTable = node.(*TableName)
 	}
-	for _, col := range n.NewColumns {
+	for i, col := range n.NewColumns {
 		node, ok := col.Accept(v)
 		if !ok {
 			return n, false
 		}
-		col = node.(*ColumnDef)
+		n.NewColumns[i] = node.(*ColumnDef)
 	}
-	for _, constraint := range n.NewConstraints {
+	for i, constraint := range n.NewConstraints {
 		node, ok := constraint.Accept(v)
 		if !ok {
 			return n, false
 		}
-		constraint = node.(*Constraint)
+		n.NewConstraints[i] = node.(*Constraint)
 	}
 	if n.OldColumnName != nil {
 		node, ok := n.OldColumnName.Accept(v)
@@ -3335,6 +3407,13 @@ type PartitionMethod struct {
 
 	// Num is the number of (sub)partitions required by the method.
 	Num uint64
+
+	// KeyAlgorithm is the optional hash algorithm type for `PARTITION BY [LINEAR] KEY` syntax.
+	KeyAlgorithm *PartitionKeyAlgorithm
+}
+
+type PartitionKeyAlgorithm struct {
+	Type uint64
 }
 
 // Restore implements the Node interface
@@ -3343,6 +3422,11 @@ func (n *PartitionMethod) Restore(ctx *format.RestoreCtx) error {
 		ctx.WriteKeyWord("LINEAR ")
 	}
 	ctx.WriteKeyWord(n.Tp.String())
+
+	if n.KeyAlgorithm != nil {
+		ctx.WriteKeyWord(" ALGORITHM")
+		ctx.WritePlainf(" = %d", n.KeyAlgorithm.Type)
+	}
 
 	switch {
 	case n.Tp == model.PartitionTypeSystemTime:
