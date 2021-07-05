@@ -785,6 +785,22 @@ func (p PartitionType) String() string {
 
 }
 
+type TwopcPartitionType int
+
+const (
+	PartitionTypeModInteger TwopcPartitionType = 1
+)
+
+func (p TwopcPartitionType) String() string {
+	switch p {
+	case PartitionTypeModInteger:
+		return "MOD_INT"
+	default:
+		return ""
+	}
+
+}
+
 // PartitionInfo provides table partition info.
 type PartitionInfo struct {
 	Type    PartitionType `json:"type"`

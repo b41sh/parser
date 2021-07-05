@@ -468,6 +468,7 @@ var tokenMap = map[string]int{
 	"MINUTE":                   minute,
 	"MINVALUE":                 minValue,
 	"MOD":                      mod,
+	"MOD_INT":                  mod_int,
 	"MODE":                     mode,
 	"MODIFY":                   modify,
 	"MONTH":                    month,

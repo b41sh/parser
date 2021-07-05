@@ -460,6 +460,7 @@ import (
 	minValue              "MINVALUE"
 	mode                  "MODE"
 	modify                "MODIFY"
+	mod_int               "MOD_INT"
 	month                 "MONTH"
 	names                 "NAMES"
 	national              "NATIONAL"
@@ -1066,6 +1067,7 @@ import (
 	PartitionDefinitionListOpt             "Partition definition list option"
 	PartitionKeyAlgorithmOpt               "ALGORITHM = n option for KEY partition"
 	PartitionMethod                        "Partition method"
+	TwopcPartitionMethod                   "Twopc Partition method"
 	PartitionOpt                           "Partition option"
 	PartitionNameList                      "Partition name list"
 	PartitionNameListOpt                   "table partition names list optional"
@@ -2172,6 +2174,15 @@ AlterTableSpec:
 	{
 		$$ = &ast.AlterTableSpec{
 			Tp: ast.AlterTableUploadWithAtoi,
+		}
+	}
+|	tblProperties "SPLIT" "BY" TwopcPartitionMethod PartitionNumOpt
+	{
+		method := $4.(*ast.TwopcPartitionMethod)
+		method.Num = $5.(uint64)
+		$$ = &ast.AlterTableSpec{
+			Tp:             ast.AlterTableMakeTwopcPartitions,
+			TwopcPartition: method,
 		}
 	}
 |	tblProperties
@@ -3801,6 +3812,15 @@ PartitionKeyAlgorithmOpt:
 		}
 		$$ = &ast.PartitionKeyAlgorithm{
 			Type: tp,
+		}
+	}
+
+TwopcPartitionMethod:
+	"MOD_INT" '(' ColumnName ')'
+	{
+		$$ = &ast.TwopcPartitionMethod{
+			Tp:         model.PartitionTypeModInteger,
+			ColumnName: $3.(*ast.ColumnName),
 		}
 	}
 
@@ -5990,6 +6010,7 @@ UnReservedKeyword:
 |	"NONCLUSTERED"
 |	"PRESERVE"
 |	"TBLPROPERTIES"
+|	"MOD_INT"
 
 TiDBKeyword:
 	"ADMIN"

@@ -21,6 +21,7 @@ import (
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/parser/terror"
 	"github.com/pingcap/parser/types"
+	"strconv"
 )
 
 var (
@@ -2338,6 +2339,7 @@ const (
 	AlterTableUploadWithAtoi
 	AlterTableProperties
 	AlterTableUploadWithDict
+	AlterTableMakeTwopcPartitions
 )
 
 // LockType is the type for AlterTableSpec.
@@ -2430,6 +2432,7 @@ type AlterTableSpec struct {
 	Partition       *PartitionOptions
 	PartitionNames  []model.CIStr
 	PartDefinitions []*PartitionDefinition
+	TwopcPartition  *TwopcPartitionMethod
 	WithValidation  bool
 	Num             uint64
 	Visibility      IndexVisibility
@@ -2957,6 +2960,11 @@ func (n *AlterTableSpec) Restore(ctx *format.RestoreCtx) error {
 		}
 	case AlterTableUploadWithAtoi:
 		ctx.WriteKeyWord("UPLOAD AND ATOI")
+	case AlterTableMakeTwopcPartitions:
+		err := n.TwopcPartition.Restore(ctx)
+		if err != nil {
+			return errors.Annotate(err, "An error occurred while restore AlterTableSpec.MakeTwopcPartitions")
+		}
 	default:
 		// TODO: not support
 		ctx.WritePlainf(" /* AlterTableType(%d) is not supported */ ", n.Tp)
@@ -3487,6 +3495,29 @@ func (n *PartitionMethod) acceptInPlace(v Visitor) bool {
 		n.ColumnNames[i] = newColName.(*ColumnName)
 	}
 	return true
+}
+
+// TwopcPartitionMethod describes how partitions are constructed for privpy 2pc datasource.
+type TwopcPartitionMethod struct {
+	Tp         model.TwopcPartitionType
+	ColumnName *ColumnName
+	Num        uint64
+}
+
+// Restore implements the Node interface
+func (n *TwopcPartitionMethod) Restore(ctx *format.RestoreCtx) error {
+	if len(n.Tp.String()) == 0 {
+		return errors.New("unrecognized 2pc partition method")
+	}
+	ctx.WriteKeyWord("SPLIT BY ")
+	ctx.WriteName(n.Tp.String())
+	ctx.WritePlain(" (")
+	ctx.WriteName(n.ColumnName.Name.L)
+	ctx.WritePlain(") ")
+	ctx.WriteKeyWord("PARTITIONS ")
+	ctx.WriteName(strconv.Itoa(int(n.Num)))
+
+	return nil
 }
 
 // PartitionOptions specifies the partition options.
